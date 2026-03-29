@@ -757,7 +757,9 @@ async def receive_first_compare_document(message: Message, state: FSMContext) ->
             "❌ Не удалось обработать документ. Попробуйте ещё раз или отправьте другой файл."
         )
         return
-    finally:
+    except Exception:
+        # If we acquired the shared lock but failed on the first document, we MUST release it,
+        # otherwise the whole service stays "busy".
         if lock_token:
             release_processing(
                 channel="telegram",
@@ -766,11 +768,13 @@ async def receive_first_compare_document(message: Message, state: FSMContext) ->
                 lock_token=lock_token,
                 scenario_type=MODE_COMPARE,
             )
+        raise
 
     data = await state.get_data()
     files = data.get("files", [])
     files.append(_result_to_state_file_item(extracted))
-    await state.update_data(files=files, compare_partial_timings=timings1)
+    # Keep the shared lock across the whole compare flow (first doc -> second doc -> comparison).
+    await state.update_data(files=files, compare_partial_timings=timings1, compare_lock_token=lock_token)
     await state.set_state(BotFlow.waiting_compare_second_document)
     await message.answer(
         "Первый файл получен.\n"
@@ -794,18 +798,21 @@ async def receive_second_compare_document(message: Message, state: FSMContext) -
     data = await state.get_data()
     trace_id = data.get("trace_id")
     partial = data.get("compare_partial_timings") or {}
+    existing_lock_token = data.get("compare_lock_token")
     uid = message.from_user.id if message.from_user else None
-    lock_token: str | None = None
+    lock_token: str | None = existing_lock_token
     try:
-        lock_token = try_acquire_processing(
-            channel="telegram",
-            trace_id=trace_id,
-            user_id=uid,
-            scenario_type=MODE_COMPARE,
-        )
+        # Backward compatibility / recovery: if state lost the token, try to acquire now.
         if not lock_token:
-            await message.answer(TELEGRAM_BUSY_MESSAGE)
-            return
+            lock_token = try_acquire_processing(
+                channel="telegram",
+                trace_id=trace_id,
+                user_id=uid,
+                scenario_type=MODE_COMPARE,
+            )
+            if not lock_token:
+                await message.answer(TELEGRAM_BUSY_MESSAGE)
+                return
         t0 = time.perf_counter()
         log_scenario_processing(
             logger,
@@ -892,6 +899,7 @@ async def receive_second_compare_document(message: Message, state: FSMContext) -
                 "disclaimer": comparison.disclaimer,
             },
             compare_partial_timings=None,
+            compare_lock_token=None,
         )
         latest_data = await state.get_data()
         await message.answer(_render_contract_comparison(latest_data["comparison"]))
@@ -1370,6 +1378,19 @@ async def handle_return_destination(message: Message, state: FSMContext) -> None
 @router.message(BotFlow.waiting_return_recognized_results, F.text == CANCEL_OPTION)
 @router.message(BotFlow.waiting_return_destination, F.text == CANCEL_OPTION)
 async def cancel_and_back_to_menu(message: Message, state: FSMContext) -> None:
+    # If compare flow is holding a shared lock across FSM steps, release it on cancel.
+    data = await state.get_data()
+    trace_id = data.get("trace_id")
+    lock_token = data.get("compare_lock_token")
+    uid = message.from_user.id if message.from_user else None
+    if lock_token:
+        release_processing(
+            channel="telegram",
+            trace_id=trace_id,
+            user_id=uid,
+            lock_token=lock_token,
+            scenario_type=MODE_COMPARE,
+        )
     await state.clear()
     await state.set_state(BotFlow.choosing_mode)
     await message.answer("Сценарий отменен. Вернулись в главное меню.", reply_markup=main_menu_keyboard())
