@@ -4,9 +4,14 @@
 !.env.example
 *.pem
 *.key
-*token*
-*secret*
-credentials*.json
+client_secret*.json
+credentials.json
+credentials-*.json
+service-account*.json
+secrets.json
+secrets.local.json
+tokens.json
+token.txt
 
 # --- Python ---
 __pycache__/
