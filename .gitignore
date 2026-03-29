@@ -1,0 +1,71 @@
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*token*
+*secret*
+credentials*.json
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+ENV/
+env/
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# --- IDE / OS ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Docker / local runtime ---
+docker-data/
+*.pid
+*.log
+logs/
+*.session
+bot_data/
+bot.log
+
+# --- Google Drive OAuth local storage ---
+data/
+*.sqlite3
+
+# --- OCR / temp artifacts ---
+tmp/
+temp/
+artifacts/
+uploads/
+downloads/
+cache/
+ocr_debug/
+bot_pipeline_debug/
+masking_debug/
+masking_pipeline_debug/
+*.tmp
+*.bak
+*.ocr.*
+
+# --- Tests / reports ---
+.tox/
+.nox/
+coverage.xml
+report.xml

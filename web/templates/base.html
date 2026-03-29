@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}DocuMind{% endblock %}</title>
+  <link rel="stylesheet" href="{{ request.url_for('static', path='css/app.css') }}" />
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <header class="dm-header">
+    <div class="dm-header__inner">
+      <a class="dm-logo" href="{{ url_for('web_root') }}">DocuMind</a>
+      <nav class="dm-nav" aria-label="Основная навигация">
+        <a href="{{ url_for('web_root') }}">Главная</a>
+        <a href="{{ url_for('web_upload') }}">Загрузка</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="dm-main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="dm-footer">
+    DocuMind — обработка договоров. Веб-интерфейс подключён к тем же backend-сервисам, что и бот.
+  </footer>
+</body>
+</html>

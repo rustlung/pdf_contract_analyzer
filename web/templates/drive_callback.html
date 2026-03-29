@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} — DocuMind{% endblock %}
+
+{% block content %}
+<div class="dm-callback">
+  <div class="dm-card dm-callback__card">
+    <div class="dm-callback__icon {{ 'dm-callback__icon--ok' if success else 'dm-callback__icon--err' }}">
+      {{ '✓' if success else '!' }}
+    </div>
+    <h1 class="dm-h1" style="font-size: 1.35rem;">{{ headline }}</h1>
+    <p class="dm-lead" style="margin: 0 auto 0.5rem; font-size: 0.95rem;">{{ message }}</p>
+
+    <div class="dm-callback__actions">
+      {% if file_url %}
+      <a class="dm-btn dm-btn--success" href="{{ file_url }}" target="_blank" rel="noopener noreferrer">Открыть файл</a>
+      {% endif %}
+      <button type="button" class="dm-btn dm-btn--secondary" onclick="backToTelegram()">Вернуться в Telegram</button>
+    </div>
+    <p class="dm-note">Это окно можно закрыть.</p>
+  </div>
+</div>
+<script>
+  function backToTelegram() {
+    try {
+      window.location.href = "tg://";
+      setTimeout(function () { window.location.href = "https://web.telegram.org/"; }, 450);
+    } catch (e) {
+      window.location.href = "https://web.telegram.org/";
+    }
+  }
+</script>
+{% endblock %}

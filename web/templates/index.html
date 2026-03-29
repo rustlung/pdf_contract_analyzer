@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}DocuMind — главная{% endblock %}
+
+{% block content %}
+<section class="dm-hero">
+  <h1 class="dm-h1">Документы под контролем</h1>
+  <p class="dm-lead">
+    DocuMind помогает распознавать тексты договоров, анализировать условия и сравнивать версии —
+    с деперсонализацией и опциональным сохранением в Google Drive.
+  </p>
+  <div class="dm-actions">
+    <a class="dm-btn dm-btn--primary" href="{{ url_for('web_upload') }}">Открыть веб-интерфейс</a>
+    <a class="dm-btn dm-btn--secondary" href="{{ telegram_bot_url }}" target="_blank" rel="noopener noreferrer">Открыть Telegram-бот</a>
+  </div>
+</section>
+
+<section class="dm-grid dm-grid--3" style="margin-top: 2rem;">
+  <article class="dm-card">
+    <h2 class="dm-card__title">Распознавание договора</h2>
+    <p class="dm-card__text">PDF → структурированный DOCX с нормализацией текста и базовым восстановлением структуры.</p>
+  </article>
+  <article class="dm-card">
+    <h2 class="dm-card__title">Анализ договора</h2>
+    <p class="dm-card__text">Маскирование чувствительных данных и аналитический разбор через LLM в структурированном виде.</p>
+  </article>
+  <article class="dm-card">
+    <h2 class="dm-card__title">Сравнение договоров</h2>
+    <p class="dm-card__text">Сопоставление двух версий: ключевые различия, риски и изменения по блокам.</p>
+  </article>
+</section>
+
+<p class="dm-hint" style="margin-top: 2rem; text-align: center;">
+  Распознавание — только PDF. Анализ и сравнение — PDF и DOCX. Результаты и ссылки на Drive отображаются на странице после обработки.
+</p>
+{% endblock %}

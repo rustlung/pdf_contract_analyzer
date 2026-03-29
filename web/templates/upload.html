@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Загрузка — DocuMind{% endblock %}
+
+{% block content %}
+<h1 class="dm-h1">Новый запрос</h1>
+<p class="dm-lead">Выберите режим и файлы. Обработка выполняется на сервере теми же сервисами, что и в Telegram-боте.</p>
+
+{% if error %}
+<div id="dm-flash-error" class="dm-card" style="margin-bottom: 1.25rem; border-color: rgba(220, 38, 38, 0.35);">
+  <p class="dm-section__body" style="margin:0; color: #b91c1c;">{{ error }}</p>
+</div>
+{% endif %}
+
+<div class="dm-card dm-form">
+  <form id="dm-upload-form" method="post" action="{{ url_for('web_run') }}" enctype="multipart/form-data">
+    <div class="dm-field">
+      <label class="dm-label" for="mode">Режим</label>
+      <select class="dm-select" id="mode" name="mode">
+        <option value="recognize">Распознавание договора (PDF → DOCX)</option>
+        <option value="analyze">Анализ договора</option>
+        <option value="compare">Сравнение договоров</option>
+      </select>
+    </div>
+
+    <div class="dm-field" id="file1-wrap">
+      <label class="dm-label" for="file1" id="file1-label">Договор</label>
+      <input class="dm-input" type="file" id="file1" name="file1" required />
+      <p class="dm-hint" id="file1-hint"></p>
+    </div>
+
+    <div class="dm-field" id="file2-wrap" hidden>
+      <label class="dm-label" for="file2" id="file2-label">Договор 2</label>
+      <input class="dm-input" type="file" id="file2" name="file2" />
+      <p class="dm-hint" id="file2-hint">Укажите два договора для сравнения (PDF или DOCX).</p>
+    </div>
+
+    <div class="dm-field">
+      <label class="dm-checkbox">
+        <input type="checkbox" name="save_to_drive" value="on" />
+        <span>Сохранить результат в Google Drive</span>
+      </label>
+      <p class="dm-hint">Если аккаунт не подключён, откроется страница авторизации Google; после входа сохранение продолжится автоматически.</p>
+    </div>
+
+    <div class="dm-field" id="return-recognized-wrap" hidden>
+      <label class="dm-checkbox" style="opacity: 0.55;">
+        <input type="checkbox" name="return_recognized" value="on" disabled title="Будет доступно в следующих версиях" />
+        <span>Вернуть распознанные результаты</span>
+      </label>
+      <p class="dm-hint">Опция зарезервирована (веб).</p>
+    </div>
+
+    <p class="dm-hint" id="dm-loading-msg" style="display: none; margin-top: 0.35rem; color: #475569;">
+      Документ обрабатывается. Это может занять до 10–20 секунд.
+    </p>
+
+    <div class="dm-actions" style="justify-content: flex-start; margin-top: 0.5rem;">
+      <button type="submit" id="dm-submit-btn" class="dm-btn dm-btn--primary">Запустить</button>
+      <a class="dm-btn dm-btn--ghost" href="{{ url_for('web_root') }}">Отмена</a>
+    </div>
+  </form>
+</div>
+<script>
+(function () {
+  var mode = document.getElementById("mode");
+  var file1 = document.getElementById("file1");
+  var file1Label = document.getElementById("file1-label");
+  var file1Hint = document.getElementById("file1-hint");
+  var file2Wrap = document.getElementById("file2-wrap");
+  var file2 = document.getElementById("file2");
+  var file2Hint = document.getElementById("file2-hint");
+  var returnWrap = document.getElementById("return-recognized-wrap");
+  var form = document.getElementById("dm-upload-form");
+  var submitBtn = document.getElementById("dm-submit-btn");
+  var loadingMsg = document.getElementById("dm-loading-msg");
+
+  function syncUploadFields() {
+    var v = mode.value;
+    var isCompare = v === "compare";
+    var isRecognize = v === "recognize";
+    if (isCompare) {
+      file1Label.textContent = "Договор 1";
+      file2Wrap.hidden = false;
+      file2.required = true;
+      file1.setAttribute("accept", ".pdf,.docx");
+      file2.setAttribute("accept", ".pdf,.docx");
+      file2Hint.style.display = "";
+      file1Hint.textContent = "Форматы: PDF или DOCX.";
+      if (returnWrap) returnWrap.hidden = true;
+    } else if (isRecognize) {
+      file1Label.textContent = "Договор (PDF)";
+      file2Wrap.hidden = true;
+      file2.required = false;
+      file2.value = "";
+      file1.setAttribute("accept", ".pdf");
+      file1Hint.textContent = "Только PDF: извлечение текста и сборка DOCX.";
+      file2Hint.style.display = "none";
+      if (returnWrap) returnWrap.hidden = true;
+    } else {
+      file1Label.textContent = "Договор";
+      file2Wrap.hidden = true;
+      file2.required = false;
+      file2.value = "";
+      file1.setAttribute("accept", ".pdf,.docx");
+      file1Hint.textContent = "Форматы: PDF или DOCX.";
+      file2Hint.style.display = "none";
+      if (returnWrap) returnWrap.hidden = false;
+    }
+  }
+
+  mode.addEventListener("change", syncUploadFields);
+  syncUploadFields();
+
+  if (form && submitBtn) {
+    form.addEventListener("submit", function () {
+      var flash = document.getElementById("dm-flash-error");
+      if (flash) flash.style.display = "none";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Обработка...";
+      if (loadingMsg) loadingMsg.style.display = "block";
+    });
+  }
+})();
+</script>
+{% endblock %}

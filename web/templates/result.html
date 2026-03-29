@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Результат — DocuMind{% endblock %}
+
+{% block content %}
+<h1 class="dm-h1">Результат</h1>
+
+{% if not has_data %}
+<p class="dm-lead">{{ error }}</p>
+<div class="dm-actions" style="justify-content: flex-start;">
+  <a class="dm-btn dm-btn--primary" href="{{ url_for('web_upload') }}">К загрузке</a>
+</div>
+{% else %}
+
+{% set a = meta.get('analysis') or {} %}
+{% set c = meta.get('comparison') or {} %}
+{% set ext = meta.get('extraction') %}
+
+{% if kind == 'recognize' %}
+<p class="dm-lead">Текст извлечён и собран в DOCX. Ниже — служебная информация о извлечении.</p>
+
+<div class="dm-card" style="margin-bottom: 1.5rem;">
+  <div class="dm-section">
+    <p class="dm-section__title">Извлечение</p>
+    <ul class="dm-list">
+      <li>Страниц: {{ meta.pages_count if meta.pages_count is defined else '—' }}</li>
+      <li>Метод: {{ meta.extraction_method or '—' }}</li>
+      <li>OCR: {% if meta.used_ocr %}да{% else %}нет{% endif %}</li>
+    </ul>
+  </div>
+</div>
+
+<div class="dm-actions" style="justify-content: flex-start; flex-wrap: wrap;">
+  <a class="dm-btn dm-btn--secondary" href="{{ url_for('web_download_docx', token=token) }}">Скачать DOCX</a>
+  {% if meta.get('drive_web_link') %}
+  <a class="dm-btn dm-btn--success" href="{{ meta.drive_web_link }}" target="_blank" rel="noopener noreferrer">Открыть в Google Drive</a>
+  {% endif %}
+  <a class="dm-btn dm-btn--primary" href="{{ url_for('web_upload') }}">Новый запуск</a>
+</div>
+
+{% elif kind == 'analyze' %}
+<p class="dm-lead">Анализ выполнен по маскированному тексту (чувствительные данные скрыты перед LLM).</p>
+
+<div class="dm-card" style="margin-bottom: 1.5rem;">
+  {% if ext %}
+  <div class="dm-section">
+    <p class="dm-section__title">Документ</p>
+    <p class="dm-section__body">Страниц: {{ ext.pages_count }}, метод: {{ ext.extraction_method }}, OCR: {% if ext.used_ocr %}да{% else %}нет{% endif %}</p>
+  </div>
+  {% endif %}
+  <div class="dm-section">
+    <p class="dm-section__title">Тип документа</p>
+    <p class="dm-section__body">{{ a.document_type or '—' }}</p>
+  </div>
+  <div class="dm-section">
+    <p class="dm-section__title">Краткое резюме</p>
+    <p class="dm-section__body">{{ a.summary or '—' }}</p>
+  </div>
+  <div class="dm-section">
+    <p class="dm-section__title">Стороны</p>
+    <ul class="dm-list">
+      {% for p in (a.parties or []) %}
+      <li>{{ p }}</li>
+      {% else %}
+      <li>—</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="dm-section">
+    <p class="dm-section__title">Предмет / срок / оплата</p>
+    <p class="dm-section__body">Предмет: {{ a.subject or '—' }}</p>
+    <p class="dm-section__body">Срок: {{ a.term or '—' }}</p>
+    <p class="dm-section__body">Оплата: {{ a.payment_terms or '—' }}</p>
+  </div>
+  <div class="dm-section">
+    <p class="dm-section__title">Обязательства</p>
+    <ul class="dm-list">
+      {% for x in (a.obligations or []) %}
+      <li>{{ x }}</li>
+      {% else %}
+      <li>—</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="dm-section">
+    <p class="dm-section__title">Риски</p>
+    <ul class="dm-list">
+      {% for x in (a.risks or []) %}
+      <li>{{ x }}</li>
+      {% else %}
+      <li>—</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="dm-section">
+    <p class="dm-section__title">Дисклеймер</p>
+    {% set _d = (a.disclaimer or '')|trim|lower %}
+    {% if _d in ['', 'не указано', 'не указано.', '-', '—', 'n/a'] %}
+    <p class="dm-section__body" style="font-size: 0.9rem; color: #64748b;">Это не является юридическим заключением.</p>
+    {% else %}
+    <p class="dm-section__body" style="font-size: 0.9rem; color: #64748b;">{{ a.disclaimer }}</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="dm-actions" style="justify-content: flex-start; flex-wrap: wrap;">
+  {% if meta.get('drive_web_link') %}
+  <a class="dm-btn dm-btn--success" href="{{ meta.drive_web_link }}" target="_blank" rel="noopener noreferrer">Открыть отчёт в Google Drive</a>
+  {% endif %}
+  <a class="dm-btn dm-btn--primary" href="{{ url_for('web_upload') }}">Новый запуск</a>
+</div>
+
+{% elif kind == 'compare' %}
+<p class="dm-lead">Сравнение двух версий по маскированным текстам.</p>
+
+<div class="dm-card" style="margin-bottom: 1.5rem;">
+  <div class="dm-section">
+    <p class="dm-section__title">Файлы</p>
+    <p class="dm-section__body">{{ meta.doc1.filename if meta.doc1 else '—' }} · OCR: {% if meta.doc1 and meta.doc1.used_ocr %}да{% else %}нет{% endif %}</p>
+    <p class="dm-section__body">{{ meta.doc2.filename if meta.doc2 else '—' }} · OCR: {% if meta.doc2 and meta.doc2.used_ocr %}да{% else %}нет{% endif %}</p>
+  </div>
+  <div class="dm-section">
+    <p class="dm-section__title">Сводка</p>
+    <p class="dm-section__body">{{ c.summary or '—' }}</p>
+  </div>
+  <div class="dm-section">
+    <p class="dm-section__title">Ключевые различия</p>
+    <ul class="dm-list">
+      {% for x in (c.major_differences or []) %}
+      <li>{{ x }}</li>
+      {% else %}
+      <li>—</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="dm-section">
+    <p class="dm-section__title">Изменения по блокам</p>
+    <p class="dm-section__body">Стороны: {{ c.parties_changes or '—' }}</p>
+    <p class="dm-section__body">Предмет: {{ c.subject_changes or '—' }}</p>
+    <p class="dm-section__body">Сроки: {{ c.term_changes or '—' }}</p>
+    <p class="dm-section__body">Оплата: {{ c.payment_changes or '—' }}</p>
+    <p class="dm-section__body">Обязательства: {{ c.obligations_changes or '—' }}</p>
+  </div>
+  <div class="dm-section">
+    <p class="dm-section__title">Риски</p>
+    <ul class="dm-list">
+      {% for x in (c.risks or []) %}
+      <li>{{ x }}</li>
+      {% else %}
+      <li>—</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% if c.disclaimer %}
+  <div class="dm-section">
+    <p class="dm-section__title">Дисклеймер</p>
+    <p class="dm-section__body" style="font-size: 0.9rem; color: #64748b;">{{ c.disclaimer }}</p>
+  </div>
+  {% endif %}
+</div>
+
+<div class="dm-actions" style="justify-content: flex-start; flex-wrap: wrap;">
+  {% if meta.get('drive_web_link') %}
+  <a class="dm-btn dm-btn--success" href="{{ meta.drive_web_link }}" target="_blank" rel="noopener noreferrer">Открыть отчёт в Google Drive</a>
+  {% endif %}
+  <a class="dm-btn dm-btn--primary" href="{{ url_for('web_upload') }}">Новый запуск</a>
+</div>
+
+{% else %}
+<p class="dm-lead">Неизвестный тип результата.</p>
+<a class="dm-btn dm-btn--primary" href="{{ url_for('web_upload') }}">Новый запуск</a>
+{% endif %}
+
+{% endif %}
+{% endblock %}

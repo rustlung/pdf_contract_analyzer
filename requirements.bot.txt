@@ -1,0 +1,8 @@
+aiogram
+python-docx
+PyMuPDF
+pytesseract
+Pillow
+openai
+python-dotenv
+httpx
