@@ -1,0 +1,35 @@
+services:
+  dm-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: dm-web
+    restart: unless-stopped
+    environment:
+      - DOCUMIND_ROOT_PATH=${DOCUMIND_ROOT_PATH:-/documind}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - SESSION_SECRET=${SESSION_SECRET:?set SESSION_SECRET}
+      - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID:-}
+      - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET:-}
+      - GOOGLE_OAUTH_REDIRECT_URI=${GOOGLE_OAUTH_REDIRECT_URI:-}
+      - DRIVE_OAUTH_STATE_SECRET=${DRIVE_OAUTH_STATE_SECRET:-}
+      - GOOGLE_OAUTH_SCOPES=${GOOGLE_OAUTH_SCOPES:-}
+      - DOCUMIND_WEB_RESULT_DIR=${DOCUMIND_WEB_RESULT_DIR:-}
+      - DOCUMIND_DRIVE_TOKEN_DB=${DOCUMIND_DRIVE_TOKEN_DB:-}
+      - DOCUMIND_PROCESSING_LOCK_DB=${DOCUMIND_PROCESSING_LOCK_DB:-}
+      - DOCUMIND_PROCESSING_LOCK_STALE_SECONDS=${DOCUMIND_PROCESSING_LOCK_STALE_SECONDS:-}
+      - TELEGRAM_BOT_URL=${TELEGRAM_BOT_URL:-}
+      - PROXYAPI_API_KEY=${PROXYAPI_API_KEY:-}
+    volumes:
+      - ./data:/app/data
+    command: >
+      sh -c "uvicorn src.api.main:app
+      --host 0.0.0.0
+      --port 8000
+      --log-level info"
+    networks:
+      - infra_internal
+
+networks:
+  infra_internal:
+    external: true

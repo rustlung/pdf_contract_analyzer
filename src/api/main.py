@@ -56,7 +56,12 @@ async def _lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="DocuMind API", version="0.1.0", lifespan=_lifespan)
+app = FastAPI(
+    title="DocuMind API",
+    version="0.1.0",
+    lifespan=_lifespan,
+    root_path=os.getenv("DOCUMIND_ROOT_PATH", ""),
+)
 
 _session_secret = os.getenv("SESSION_SECRET", "").strip() or "dev-change-me-set-SESSION_SECRET"
 app.add_middleware(SessionMiddleware, secret_key=_session_secret, max_age=14 * 24 * 3600, same_site="lax")

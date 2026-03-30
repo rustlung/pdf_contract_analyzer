@@ -232,6 +232,7 @@ def google_drive_connect(
         )
     # Some environments (embedded browsers/proxies) may not follow redirects reliably.
     # Return a tiny HTML page with an explicit link and auto-redirect.
+    web_back_href = str(request.url_for("web_upload"))
     return _render_drive_page(
         title="Подключение Google Drive",
         message="Сейчас откроется страница Google для авторизации. Если переход не произошёл — нажмите кнопку ниже.",
@@ -239,7 +240,7 @@ def google_drive_connect(
         primary_label="Открыть страницу авторизации",
         primary_href=auth_url,
         web_back_label="Вернуться в DocuMind",
-        web_back_href="/web/upload",
+        web_back_href=web_back_href,
         small_note="Если вы уже авторизовались, можно закрыть это окно.",
     )
 
@@ -291,7 +292,7 @@ def google_drive_callback(code: str, state: str, request: Request) -> HTMLRespon
             )
 
     web_continue = (
-        f"/web/result?t={state_oauth.web_result_token}"
+        str(request.url_for("web_result")) + f"?t={state_oauth.web_result_token}"
         if is_web and state_oauth.web_result_token
         else None
     )

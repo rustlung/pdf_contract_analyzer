@@ -170,6 +170,8 @@ async def web_run(
     file1: UploadFile = File(...),
     file2: UploadFile | None = File(None),
 ) -> Response:
+    upload_url = str(request.url_for("web_upload"))
+    result_url = str(request.url_for("web_result"))
     want_drive = save_to_drive == "on"
     trace = secrets.token_hex(8)
     web_uid = _get_web_drive_uid(request)
@@ -226,14 +228,14 @@ async def web_run(
             if not file2:
                 _done_err("missing_file2")
                 request.session["flash_error"] = "Для сравнения загрузите два файла."
-                return RedirectResponse(url="/web/upload", status_code=303)
+                return RedirectResponse(url=upload_url, status_code=303)
             b2 = await file2.read()
             name2 = file2.filename or "document2"
             mime2 = file2.content_type
             if len(b2) == 0:
                 _done_err("empty_file2")
                 request.session["flash_error"] = "Для сравнения загрузите второй файл."
-                return RedirectResponse(url="/web/upload", status_code=303)
+                return RedirectResponse(url=upload_url, status_code=303)
 
         lock_token = try_acquire_processing(
             channel="web",
@@ -243,7 +245,7 @@ async def web_run(
         )
         if not lock_token:
             request.session["flash_error"] = WEB_BUSY_MESSAGE
-            return RedirectResponse(url="/web/upload", status_code=303)
+            return RedirectResponse(url=upload_url, status_code=303)
 
         log_event(
             logger,
@@ -285,7 +287,7 @@ async def web_run(
                     return dr
 
             _finalize_success()
-            return RedirectResponse(url=f"/web/result?t={token}", status_code=303)
+            return RedirectResponse(url=f"{result_url}?t={token}", status_code=303)
 
         if mode == "analyze":
             data = run_analyze(b1, name1, mime1, trace_id=trace)
@@ -313,7 +315,7 @@ async def web_run(
                     _finalize_success()
                     return dr
             _finalize_success()
-            return RedirectResponse(url=f"/web/result?t={token}", status_code=303)
+            return RedirectResponse(url=f"{result_url}?t={token}", status_code=303)
 
         if mode == "compare":
             data = run_compare(b1, name1, mime1, b2, name2, mime2, trace_id=trace)
@@ -341,11 +343,11 @@ async def web_run(
                     _finalize_success()
                     return dr
             _finalize_success()
-            return RedirectResponse(url=f"/web/result?t={token}", status_code=303)
+            return RedirectResponse(url=f"{result_url}?t={token}", status_code=303)
 
         _done_err("unknown_mode")
         request.session["flash_error"] = "Неизвестный режим."
-        return RedirectResponse(url="/web/upload", status_code=303)
+        return RedirectResponse(url=upload_url, status_code=303)
 
     except DocumentProcessingError as exc:
         logger.exception("Web pipeline document error")
@@ -354,7 +356,7 @@ async def web_run(
             time.perf_counter() - scenario_t0 if scenario_t0 is not None else None,
         )
         request.session["flash_error"] = str(exc)
-        return RedirectResponse(url="/web/upload", status_code=303)
+        return RedirectResponse(url=upload_url, status_code=303)
     except DocxReconstructionError as exc:
         logger.exception("Web docx reconstruction error")
         _done_err(
@@ -362,7 +364,7 @@ async def web_run(
             time.perf_counter() - scenario_t0 if scenario_t0 is not None else None,
         )
         request.session["flash_error"] = str(exc)
-        return RedirectResponse(url="/web/upload", status_code=303)
+        return RedirectResponse(url=upload_url, status_code=303)
     except ContractAnalysisError as exc:
         logger.exception("Web analysis error")
         _done_err(
@@ -370,7 +372,7 @@ async def web_run(
             time.perf_counter() - scenario_t0 if scenario_t0 is not None else None,
         )
         request.session["flash_error"] = f"Не удалось выполнить анализ: {exc}"
-        return RedirectResponse(url="/web/upload", status_code=303)
+        return RedirectResponse(url=upload_url, status_code=303)
     except ContractComparisonError as exc:
         logger.exception("Web comparison error")
         _done_err(
@@ -378,7 +380,7 @@ async def web_run(
             time.perf_counter() - scenario_t0 if scenario_t0 is not None else None,
         )
         request.session["flash_error"] = f"Не удалось выполнить сравнение: {exc}"
-        return RedirectResponse(url="/web/upload", status_code=303)
+        return RedirectResponse(url=upload_url, status_code=303)
     except Exception:
         logger.exception("Web scenario failed")
         _done_err(
@@ -386,7 +388,7 @@ async def web_run(
             time.perf_counter() - scenario_t0 if scenario_t0 is not None else None,
         )
         request.session["flash_error"] = "Произошла ошибка обработки. Попробуйте позже."
-        return RedirectResponse(url="/web/upload", status_code=303)
+        return RedirectResponse(url=upload_url, status_code=303)
     finally:
         if lock_token:
             release_processing(
@@ -474,13 +476,11 @@ async def _maybe_drive_upload_or_oauth(
             reason=str(exc),
         )
         request.session["flash_error"] = f"Google Drive: {exc}"
-        return RedirectResponse(url="/web/upload", status_code=303)
+        return RedirectResponse(url=str(request.url_for("web_upload")), status_code=303)
 
+    connect_url = str(request.url_for("google_drive_connect", telegram_user_id=web_uid))
     return RedirectResponse(
-        url=(
-            f"/google-drive/connect/{web_uid}"
-            f"?client=web&web_result_token={result_token}&trace_id={trace}"
-        ),
+        url=f"{connect_url}?client=web&web_result_token={result_token}&trace_id={trace}",
         status_code=303,
     )
 

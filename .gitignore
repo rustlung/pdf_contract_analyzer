@@ -74,3 +74,4 @@ masking_pipeline_debug/
 .nox/
 coverage.xml
 report.xml
+/docs/audit.md
