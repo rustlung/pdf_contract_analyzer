@@ -1,5 +1,6 @@
 services:
   dm-web:
+    mem_limit: 300m
     build:
       context: .
       dockerfile: Dockerfile.api
