@@ -69,6 +69,7 @@ app.add_middleware(SessionMiddleware, secret_key=_session_secret, max_age=14 * 2
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.include_router(web_ui_router)
 app.include_router(google_drive_router, prefix="/google-drive", tags=["google-drive"])
+app.include_router(google_drive_router, prefix="/google-drive-bot", tags=["google-drive-bot"])
 
 
 @app.get("/health")

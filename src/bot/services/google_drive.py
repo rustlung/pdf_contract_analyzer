@@ -22,7 +22,7 @@ class DriveUploadResult:
 
 def build_drive_connect_url(telegram_user_id: int, *, trace_id: str | None = None) -> str:
     base = get_api_public_base_url().rstrip("/")
-    url = f"{base}/google-drive/connect/{telegram_user_id}"
+    url = f"{base}/google-drive-bot/connect/{telegram_user_id}"
     if trace_id:
         url = f"{url}?trace_id={trace_id}"
     return url

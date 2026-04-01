@@ -43,15 +43,26 @@ class PendingDriveOperation:
     file_bytes: bytes
 
 
-def _load_oauth_config() -> OAuthConfig:
+def _load_oauth_config(*, client: str | None = None) -> OAuthConfig:
     client_id = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "").strip()
     client_secret = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET", "").strip()
-    redirect_uri = os.getenv("GOOGLE_OAUTH_REDIRECT_URI", "").strip()
+    # Backward compatible: if new vars are missing, fall back to GOOGLE_OAUTH_REDIRECT_URI.
+    legacy_redirect = os.getenv("GOOGLE_OAUTH_REDIRECT_URI", "").strip()
+    redirect_web = os.getenv("GOOGLE_OAUTH_REDIRECT_URI_WEB", "").strip()
+    redirect_bot = os.getenv("GOOGLE_OAUTH_REDIRECT_URI_BOT", "").strip()
+
+    is_web = str(client or "").strip().lower() == "web"
+    if is_web:
+        redirect_uri = redirect_web or legacy_redirect
+    else:
+        redirect_uri = redirect_bot or legacy_redirect
     scopes = os.getenv("GOOGLE_OAUTH_SCOPES", "").strip()
 
     if not client_id or not client_secret or not redirect_uri:
         raise GoogleDriveOAuthError(
-            "Не заданы env-переменные Google OAuth: GOOGLE_OAUTH_CLIENT_ID/SECRET/REDIRECT_URI."
+            "Не заданы env-переменные Google OAuth: "
+            "GOOGLE_OAUTH_CLIENT_ID/SECRET и redirect URI "
+            "(GOOGLE_OAUTH_REDIRECT_URI_WEB/BOT или GOOGLE_OAUTH_REDIRECT_URI)."
         )
     scope_list = DEFAULT_SCOPES if not scopes else [s.strip() for s in scopes.split(",") if s.strip()]
     return OAuthConfig(
@@ -87,7 +98,7 @@ def build_authorization_url(
     client: str = "telegram",
     web_result_token: str | None = None,
 ) -> str:
-    config = _load_oauth_config()
+    config = _load_oauth_config(client=client)
     state = build_oauth_state(
         telegram_user_id,
         trace_id=trace_id,
@@ -120,12 +131,12 @@ def build_authorization_url(
 
 
 def exchange_code_and_store_tokens(*, code: str, state: str) -> OAuthState:
-    config = _load_oauth_config()
     try:
         state_data = parse_and_verify_oauth_state(state)
     except OAuthStateError as exc:
         raise GoogleDriveOAuthError(str(exc)) from exc
 
+    config = _load_oauth_config(client=state_data.client)
     flow = _build_flow(config=config, state=state)
     store = SQLiteTokenStore()
     code_verifier = store.pop_oauth_code_verifier(state=state, telegram_user_id=state_data.telegram_user_id)
