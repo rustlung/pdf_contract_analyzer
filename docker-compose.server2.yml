@@ -6,6 +6,8 @@ services:
       dockerfile: Dockerfile.api
     container_name: dm-web
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       - DOCUMIND_ROOT_PATH=${DOCUMIND_ROOT_PATH:-/documind}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -13,6 +15,8 @@ services:
       - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID:-}
       - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET:-}
       - GOOGLE_OAUTH_REDIRECT_URI=${GOOGLE_OAUTH_REDIRECT_URI:-}
+      - GOOGLE_OAUTH_REDIRECT_URI_WEB=${GOOGLE_OAUTH_REDIRECT_URI_WEB:-}
+      - GOOGLE_OAUTH_REDIRECT_URI_BOT=${GOOGLE_OAUTH_REDIRECT_URI_BOT:-}
       - DRIVE_OAUTH_STATE_SECRET=${DRIVE_OAUTH_STATE_SECRET:-}
       - GOOGLE_OAUTH_SCOPES=${GOOGLE_OAUTH_SCOPES:-}
       - DOCUMIND_WEB_RESULT_DIR=${DOCUMIND_WEB_RESULT_DIR:-/app/data/web_results}
