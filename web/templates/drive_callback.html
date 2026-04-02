@@ -23,9 +23,9 @@
   function backToTelegram() {
     try {
       window.location.href = "tg://";
-      setTimeout(function () { window.location.href = "https://web.telegram.org/"; }, 450);
+      setTimeout(function () { window.location.href = "{{ telegram_bot_url }}"; }, 450);
     } catch (e) {
-      window.location.href = "https://web.telegram.org/";
+      window.location.href = "{{ telegram_bot_url }}";
     }
   }
 </script>

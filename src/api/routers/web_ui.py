@@ -56,7 +56,8 @@ SESSION_TOKENS_KEY = "web_allowed_result_tokens"
 
 
 def _telegram_bot_url() -> str:
-    return os.getenv("TELEGRAM_BOT_URL", "https://t.me/").strip() or "https://t.me/"
+    default = "https://t.me/vs_DocuMind_bot"
+    return os.getenv("TELEGRAM_BOT_URL", default).strip() or default
 
 
 def _get_web_drive_uid(request: Request) -> int:

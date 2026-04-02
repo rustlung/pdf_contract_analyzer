@@ -19,6 +19,8 @@ from src.shared.logging_events import log_event
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+_TELEGRAM_BOT_URL_DEFAULT = "https://t.me/vs_DocuMind_bot"
+
 
 def _render_drive_page(
     *,
@@ -36,6 +38,7 @@ def _render_drive_page(
     is_success = status == "success"
     accent = "#16a34a" if is_success else "#dc2626"
     icon = "✓" if is_success else "!"
+    telegram_bot_url = os.getenv("TELEGRAM_BOT_URL", _TELEGRAM_BOT_URL_DEFAULT).strip() or _TELEGRAM_BOT_URL_DEFAULT
 
     primary_html = (
         f'<a class="btn btn-primary" href="{primary_href}" target="_blank" rel="noopener noreferrer">{primary_label}</a>'
@@ -165,9 +168,9 @@ def _render_drive_page(
     function backToTelegram() {{
       try {{
         window.location.href = "tg://";
-        setTimeout(() => {{ window.location.href = "https://web.telegram.org/"; }}, 450);
+        setTimeout(() => {{ window.location.href = "{telegram_bot_url}"; }}, 450);
       }} catch (e) {{
-        window.location.href = "https://web.telegram.org/";
+        window.location.href = "{telegram_bot_url}";
       }}
     }}
   </script>
