@@ -26,6 +26,10 @@ services:
     container_name: dm-bot
     env_file:
       - .env
+    environment:
+      - HTTPS_PROXY=socks5://bSnbBcLHU:95WqBcpPn@154.195.1.246:63281
+      - HTTP_PROXY=socks5://bSnbBcLHU:95WqBcpPn@154.195.1.246:63281
+      - NO_PROXY=localhost,127.0.0.1,dm-api,googleapis.com,oauth2.googleapis.com,accounts.google.com
     restart: unless-stopped
     volumes:
       - ./data:/app/data
