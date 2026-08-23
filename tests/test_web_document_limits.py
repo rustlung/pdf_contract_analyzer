@@ -93,3 +93,14 @@ def test_web_upload_shows_size_limit_error_instead_of_server_error(monkeypatch: 
         upload_page = client.get(response.headers["location"])
 
     assert "Размер PDF превышает допустимые 10 МБ" in upload_page.text
+
+
+def test_web_upload_template_shows_pdf_limits_for_all_file_fields() -> None:
+    from src.api.main import app
+
+    with TestClient(app) as client:
+        response = client.get("/web/upload")
+
+    assert response.status_code == 200
+    assert response.text.count("до 10 МБ") == 4
+    assert response.text.count("до 10 страниц") == 4

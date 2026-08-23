@@ -31,7 +31,7 @@
     <div class="dm-field" id="file2-wrap" hidden>
       <label class="dm-label" for="file2" id="file2-label">Договор 2</label>
       <input class="dm-input" type="file" id="file2" name="file2" />
-      <p class="dm-hint" id="file2-hint">Укажите два договора для сравнения (PDF или DOCX).</p>
+      <p class="dm-hint" id="file2-hint">Укажите два договора для сравнения (PDF или DOCX). PDF — до 10 МБ; для сканированных документов — до 10 страниц.</p>
     </div>
 
     <div class="dm-field">
@@ -85,7 +85,7 @@
       file1.setAttribute("accept", ".pdf,.docx");
       file2.setAttribute("accept", ".pdf,.docx");
       file2Hint.style.display = "";
-      file1Hint.textContent = "Форматы: PDF или DOCX.";
+      file1Hint.textContent = "Форматы: PDF или DOCX. PDF — до 10 МБ; для сканированных документов — до 10 страниц.";
       if (returnWrap) returnWrap.hidden = true;
     } else if (isRecognize) {
       file1Label.textContent = "Договор (PDF)";
@@ -93,7 +93,7 @@
       file2.required = false;
       file2.value = "";
       file1.setAttribute("accept", ".pdf");
-      file1Hint.textContent = "Только PDF: извлечение текста и сборка DOCX.";
+      file1Hint.textContent = "Только PDF до 10 МБ. Для сканированных документов — до 10 страниц. Извлечение текста и сборка DOCX.";
       file2Hint.style.display = "none";
       if (returnWrap) returnWrap.hidden = true;
     } else {
@@ -102,7 +102,7 @@
       file2.required = false;
       file2.value = "";
       file1.setAttribute("accept", ".pdf,.docx");
-      file1Hint.textContent = "Форматы: PDF или DOCX.";
+      file1Hint.textContent = "Форматы: PDF или DOCX. PDF — до 10 МБ; для сканированных документов — до 10 страниц.";
       file2Hint.style.display = "none";
       if (returnWrap) returnWrap.hidden = false;
     }
