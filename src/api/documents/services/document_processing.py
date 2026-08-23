@@ -45,8 +45,29 @@ def process_document(
     mime_type: str | None = None,
     *,
     trace_id: str | None = None,
+    max_pdf_size_bytes: int | None = None,
+    max_ocr_pages: int | None = None,
+    scenario_type: str | None = None,
 ) -> DocumentProcessingResult:
     source_type = _detect_source_type(filename=filename, mime_type=mime_type)
+
+    if source_type == "pdf" and max_pdf_size_bytes is not None and len(file_bytes) > max_pdf_size_bytes:
+        log_event(
+            logger,
+            event="document_rejected_size_limit",
+            trace_id=trace_id,
+            stage="PIPELINE",
+            status="rejected",
+            filename=filename,
+            size=len(file_bytes),
+            limit=max_pdf_size_bytes,
+            scenario_type=scenario_type,
+        )
+        max_size_mb = max_pdf_size_bytes / (1024 * 1024)
+        raise DocumentProcessingError(
+            f"Размер PDF превышает допустимые {max_size_mb:g} МБ. Уменьшите файл и попробуйте снова."
+        )
+
     log_event(
         logger,
         event="document_validated",
@@ -126,6 +147,23 @@ def process_document(
                 pages_count=pages_count,
                 used_ocr=False,
                 ocr_seconds=None,
+            )
+
+        if max_ocr_pages is not None and pages_count > max_ocr_pages:
+            log_event(
+                logger,
+                event="document_rejected_ocr_page_limit",
+                trace_id=trace_id,
+                stage="OCR",
+                status="rejected",
+                filename=filename,
+                pages_count=pages_count,
+                limit=max_ocr_pages,
+                scenario_type=scenario_type,
+            )
+            raise DocumentProcessingError(
+                "Документ требует распознавания текста. Для таких PDF поддерживается не более "
+                f"{max_ocr_pages} страниц. Разделите документ на несколько частей и попробуйте снова."
             )
 
         log_event(

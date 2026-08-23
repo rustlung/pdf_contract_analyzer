@@ -1,6 +1,7 @@
 services:
   dm-web:
-    mem_limit: 300m
+    mem_limit: 700m
+    memswap_limit: 1500m
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -11,6 +12,8 @@ services:
     environment:
       - DOCUMIND_ROOT_PATH=${DOCUMIND_ROOT_PATH:-/documind}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - MAX_UPLOAD_SIZE_MB=${MAX_UPLOAD_SIZE_MB:-10}
+      - MAX_OCR_PAGES=${MAX_OCR_PAGES:-10}
       - SESSION_SECRET=${SESSION_SECRET:?set SESSION_SECRET}
       - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID:-}
       - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET:-}

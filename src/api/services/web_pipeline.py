@@ -4,6 +4,7 @@ Web UI orchestration: thin wrappers around existing document/LLM/masking service
 
 from __future__ import annotations
 
+import os
 import time
 from dataclasses import asdict
 
@@ -13,6 +14,43 @@ from src.api.documents.services.document_processing import process_document
 from src.llm.contract_analysis_service import ContractAnalysisError, ContractAnalysisService
 from src.llm.contract_comparison_service import ContractComparisonError, ContractComparisonService
 from src.shared.masking import mask_document_text
+
+DEFAULT_MAX_UPLOAD_SIZE_MB = 10
+DEFAULT_MAX_OCR_PAGES = 10
+
+
+def _positive_int_env(name: str, default: int) -> int:
+    try:
+        value = int(os.getenv(name, str(default)))
+    except ValueError:
+        return default
+    return value if value > 0 else default
+
+
+def _web_document_limits() -> tuple[int, int]:
+    max_upload_size_mb = _positive_int_env("MAX_UPLOAD_SIZE_MB", DEFAULT_MAX_UPLOAD_SIZE_MB)
+    max_ocr_pages = _positive_int_env("MAX_OCR_PAGES", DEFAULT_MAX_OCR_PAGES)
+    return max_upload_size_mb * 1024 * 1024, max_ocr_pages
+
+
+def _process_web_document(
+    file_bytes: bytes,
+    *,
+    filename: str,
+    mime_type: str | None,
+    trace_id: str | None,
+    scenario_type: str,
+):
+    max_pdf_size_bytes, max_ocr_pages = _web_document_limits()
+    return process_document(
+        file_bytes,
+        filename=filename,
+        mime_type=mime_type,
+        trace_id=trace_id,
+        max_pdf_size_bytes=max_pdf_size_bytes,
+        max_ocr_pages=max_ocr_pages,
+        scenario_type=scenario_type,
+    )
 
 
 def run_recognize_pdf(
@@ -24,11 +62,12 @@ def run_recognize_pdf(
     if not filename.lower().endswith(".pdf"):
         raise DocumentProcessingError("Режим распознавания принимает только PDF.")
     timings: dict[str, float] = {}
-    result = process_document(
+    result = _process_web_document(
         file_bytes,
         filename=filename,
         mime_type="application/pdf",
         trace_id=trace_id,
+        scenario_type="recognize",
     )
     if result.ocr_seconds is not None:
         timings["ocr_time"] = result.ocr_seconds
@@ -53,7 +92,13 @@ def run_analyze(
     trace_id: str | None = None,
 ) -> dict:
     timings: dict[str, float] = {}
-    result = process_document(file_bytes, filename=filename, mime_type=mime_type, trace_id=trace_id)
+    result = _process_web_document(
+        file_bytes,
+        filename=filename,
+        mime_type=mime_type,
+        trace_id=trace_id,
+        scenario_type="analyze",
+    )
     if result.ocr_seconds is not None:
         timings["ocr_time"] = result.ocr_seconds
     t0 = time.perf_counter()
@@ -85,8 +130,20 @@ def run_compare(
     trace_id: str | None = None,
 ) -> dict:
     timings: dict[str, float] = {}
-    r1 = process_document(file1_bytes, filename=file1_name, mime_type=file1_mime, trace_id=trace_id)
-    r2 = process_document(file2_bytes, filename=file2_name, mime_type=file2_mime, trace_id=trace_id)
+    r1 = _process_web_document(
+        file1_bytes,
+        filename=file1_name,
+        mime_type=file1_mime,
+        trace_id=trace_id,
+        scenario_type="compare",
+    )
+    r2 = _process_web_document(
+        file2_bytes,
+        filename=file2_name,
+        mime_type=file2_mime,
+        trace_id=trace_id,
+        scenario_type="compare",
+    )
     ocr_sum = 0.0
     for r in (r1, r2):
         if r.ocr_seconds is not None:
