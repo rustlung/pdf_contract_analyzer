@@ -1,4 +1,4 @@
-aiogram
+aiogram==3.27.0
 aiohttp-socks
 python-docx
 PyMuPDF

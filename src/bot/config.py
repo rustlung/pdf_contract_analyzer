@@ -2,6 +2,8 @@ import os
 
 from dotenv import load_dotenv
 
+from src.shared.telegram_gateway import TelegramGatewaySettings, get_telegram_gateway_settings
+
 
 load_dotenv()
 
@@ -14,6 +16,12 @@ def get_bot_token() -> str:
             "Добавьте токен в .env и перезапустите сервис dm-bot."
         )
     return token
+
+
+def get_bot_gateway_settings() -> TelegramGatewaySettings | None:
+    """Return configured Cloudflare Gateway settings for dm-bot, if enabled."""
+
+    return get_telegram_gateway_settings(require_service_token=True)
 
 
 def get_api_internal_base_url() -> str:

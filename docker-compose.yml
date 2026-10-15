@@ -27,9 +27,14 @@ services:
     env_file:
       - .env
     environment:
-      - HTTPS_PROXY=socks5://bSnbBcLHU:95WqBcpPn@154.195.1.246:63281
-      - HTTP_PROXY=socks5://bSnbBcLHU:95WqBcpPn@154.195.1.246:63281
-      - NO_PROXY=localhost,127.0.0.1,dm-api,googleapis.com,oauth2.googleapis.com,accounts.google.com
+      # Keep proxy credentials only in the server's untracked .env. dm-bot
+      # ignores these variables for Telegram when Gateway mode is enabled.
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1,dm-api,googleapis.com,oauth2.googleapis.com,accounts.google.com}
+      - TELEGRAM_GATEWAY_URL=${TELEGRAM_GATEWAY_URL:-}
+      - TELEGRAM_GATEWAY_KEY=${TELEGRAM_GATEWAY_KEY:-}
+      - TELEGRAM_GATEWAY_SERVICE_TOKEN=${TELEGRAM_GATEWAY_SERVICE_TOKEN:-}
     restart: unless-stopped
     volumes:
       - ./data:/app/data

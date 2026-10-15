@@ -15,6 +15,7 @@ from src.api.integrations.google_drive.drive_service import (
 from src.api.integrations.google_drive.state import OAuthState, OAuthStateError, build_oauth_state, parse_and_verify_oauth_state
 from src.api.integrations.google_drive.token_store import SQLiteTokenStore, TokenStoreError
 from src.shared.logging_events import log_event
+from src.shared.telegram_gateway import get_telegram_gateway_settings
 
 logger = logging.getLogger(__name__)
 
@@ -258,19 +259,28 @@ def notify_telegram_user_after_pending(
     telegram_user_id: int,
     message_text: str,
 ) -> None:
-    token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-    if not token:
-        logger.warning("TELEGRAM_BOT_TOKEN is missing; skip notify telegram user")
-        return
+    gateway_settings = get_telegram_gateway_settings()
+    if gateway_settings:
+        url = f"{gateway_settings.api_base}/sendMessage"
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Authorization": f"Bearer {gateway_settings.gateway_key}",
+        }
+    else:
+        token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+        if not token:
+            logger.warning("TELEGRAM_BOT_TOKEN is missing; skip notify telegram user")
+            return
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = (
         f"chat_id={telegram_user_id}&text={quote_plus(message_text)}"
     )
     request = urllib.request.Request(
         url,
         data=payload.encode("utf-8"),
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        headers=headers,
         method="POST",
     )
     try:
