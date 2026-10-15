@@ -14,6 +14,11 @@ services:
     command: >
       sh -c "uvicorn src.api.main:app --host ${API_HOST:-0.0.0.0} --port ${API_PORT:-8000} --log-level info"
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     volumes:
       - ./data:/app/data
     networks:
@@ -36,6 +41,11 @@ services:
       - TELEGRAM_GATEWAY_KEY=${TELEGRAM_GATEWAY_KEY:-}
       - TELEGRAM_GATEWAY_SERVICE_TOKEN=${TELEGRAM_GATEWAY_SERVICE_TOKEN:-}
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     volumes:
       - ./data:/app/data
     networks:
